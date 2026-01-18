@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Peak Wallet - Nest.js on Lambda + API Gateway + DynamoDB (eu-central-1)
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 512
+    Environment:
+      Variables:
+        AWS_REGION: eu-central-1
+        USERS_TABLE: PeakWallet_Users
+        WALLETS_TABLE: PeakWallet_Wallets
+        TX_TABLE: PeakWallet_Transactions
+Resources:
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: '''GET,POST,PUT,DELETE,OPTIONS'''
+        AllowHeaders: '''Content-Type,Authorization'''
+        AllowOrigin: '''*'''
+  BackendFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: BackendFunction
+      Handler: lambda.handler
+      Events:
+        ProxyApi:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: Api
+            Path: /{proxy+}
+            Method: ANY
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: UsersTable
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: WalletsTable
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: TransactionsTable
+    Metadata:
+      SamResourceId: BackendFunction
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: PeakWallet_Users
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      AttributeDefinitions:
+      - AttributeName: userId
+        AttributeType: S
+      - AttributeName: email
+        AttributeType: S
+      KeySchema:
+      - AttributeName: userId
+        KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: emailIndex
+        KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+  WalletsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: PeakWallet_Wallets
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      AttributeDefinitions:
+      - AttributeName: userId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: userId
+        KeyType: HASH
+  TransactionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: PeakWallet_Transactions
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      AttributeDefinitions:
+      - AttributeName: userId
+        AttributeType: S
+      - AttributeName: sk
+        AttributeType: S
+      KeySchema:
+      - AttributeName: userId
+        KeyType: HASH
+      - AttributeName: sk
+        KeyType: RANGE
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint
+    Value:
+      Fn::Sub: https://${Api}.execute-api.${AWS::Region}.amazonaws.com/prod
