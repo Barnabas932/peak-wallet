@@ -9,7 +9,6 @@ Globals:
     MemorySize: 512
     Environment:
       Variables:
-        AWS_REGION: eu-central-1
         USERS_TABLE: PeakWallet_Users
         WALLETS_TABLE: PeakWallet_Wallets
         TX_TABLE: PeakWallet_Transactions
@@ -37,6 +36,9 @@ Resources:
             Path: /{proxy+}
             Method: ANY
       Policies:
+        # CloudWatch logs (hogy lásd a hibákat/logokat)
+        - AWSLambdaBasicExecutionRole
+        # DynamoDB hozzáférések
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable
         - DynamoDBCrudPolicy:
