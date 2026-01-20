@@ -21,6 +21,11 @@ async function bootstrap(): Promise<Handler> {
 
   // Nest routes:
   nestApp.setGlobalPrefix("v1");
+	nestApp.enableCors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+});
 
   await nestApp.init();
 
