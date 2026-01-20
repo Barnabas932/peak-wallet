@@ -25,9 +25,12 @@ Resources:
 
   BackendFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: none
     Properties:
-      CodeUri: ../../apps/api/dist
+      CodeUri: ../../apps/api/lambda-dist
       Handler: lambda.handler
+      Runtime: nodejs20.x
       Events:
         ProxyApi:
           Type: Api
@@ -36,15 +39,15 @@ Resources:
             Path: /{proxy+}
             Method: ANY
       Policies:
-        # CloudWatch logs (hogy lásd a hibákat/logokat)
         - AWSLambdaBasicExecutionRole
-        # DynamoDB hozzáférések
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable
         - DynamoDBCrudPolicy:
             TableName: !Ref WalletsTable
         - DynamoDBCrudPolicy:
             TableName: !Ref TransactionsTable
+
+
 
   UsersTable:
     Type: AWS::DynamoDB::Table
