@@ -4,6 +4,9 @@ import { ExpressAdapter } from "@nestjs/platform-express";
 import express, { Request, Response } from "express";
 import { AppModule } from "./app.module";
 import serverlessExpress from "@vendia/serverless-express";
+import { ValidationPipe } from "@nestjs/common";
+
+
 
 let cachedHandler: Handler | undefined;
 
@@ -26,7 +29,7 @@ async function bootstrap(): Promise<Handler> {
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 });
-
+  nestApp.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   await nestApp.init();
 
   return serverlessExpress({ app });
